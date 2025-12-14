@@ -17,6 +17,10 @@ import { Card, CardContent } from "./ui/card";
 import { ptBR } from "date-fns/locale";
 import { useState, useMemo } from "react";
 import { format } from "date-fns";
+import { createBooking } from "@/actions/create-booking";
+import { useAction } from "next-safe-action/hooks";
+import { toast } from "sonner";
+import { Loader2 } from "lucide-react";
 
 interface ServiceItemProps {
   service: BarbershopService;
@@ -48,6 +52,9 @@ const ServiceItem = ({ service, barbershop }: ServiceItemProps) => {
   const [selectedTime, setSelectedTime] = useState<string | undefined>(
     undefined,
   );
+  const [sheetIsOpen, setSheetIsOpen] = useState(false);
+  const { executeAsync: executeCreateBooking, isPending: isCreatingBooking } =
+    useAction(createBooking);
 
   const handleDateSelect = (date: Date | undefined) => {
     setSelectedDate(date);
@@ -64,6 +71,33 @@ const ServiceItem = ({ service, barbershop }: ServiceItemProps) => {
     }
     return TIME_LIST;
   }, [selectedDate]);
+
+  const handleConfirmBooking = async () => {
+    if (!selectedDate || !selectedTime) {
+      return;
+    }
+    const splittedTime = selectedTime.split(":");
+    const hours = Number(splittedTime[0]);
+    const minutes = Number(splittedTime[1]);
+    const date = new Date(selectedDate);
+    date.setHours(hours, minutes);
+    const result = await executeCreateBooking({
+      date,
+      serviceId: service.id,
+    });
+    if (result.validationErrors) {
+      return toast.error(result.validationErrors._errors?.[0]);
+    }
+    if (result.serverError) {
+      return toast.error(
+        "Erro ao criar agendamento. Por favor, tente novamente.",
+      );
+    }
+    toast.success("Agendamento criado com sucesso!");
+    setSheetIsOpen(false);
+    setSelectedDate(undefined);
+    setSelectedTime(undefined);
+  };
 
   return (
     <div className="border-border bg-card flex gap-3 rounded-2xl border p-3">
@@ -90,7 +124,7 @@ const ServiceItem = ({ service, barbershop }: ServiceItemProps) => {
             {formatCurrency(service.priceInCents)}
           </p>
 
-          <Sheet>
+          <Sheet open={sheetIsOpen} onOpenChange={setSheetIsOpen}>
             <SheetTrigger asChild>
               <Button className="rounded-full" size="sm">
                 Reservar
@@ -182,9 +216,14 @@ const ServiceItem = ({ service, barbershop }: ServiceItemProps) => {
               <SheetFooter className="px-5 pb-6">
                 <Button
                   className="w-full"
-                  disabled={!selectedDate || !selectedTime}
+                  disabled={!selectedDate || !selectedTime || isCreatingBooking}
+                  onClick={handleConfirmBooking}
                 >
-                  Confirmar
+                  {isCreatingBooking ? (
+                    <Loader2 className="size-4 animate-spin" />
+                  ) : (
+                    "Confirmar"
+                  )}
                 </Button>
               </SheetFooter>
             </SheetContent>
