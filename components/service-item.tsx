@@ -15,12 +15,13 @@ import {
 import { Calendar } from "./ui/calendar";
 import { ptBR } from "date-fns/locale";
 import { useState } from "react";
-import { createBooking } from "@/actions/create-booking";
 import { useAction } from "next-safe-action/hooks";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
 import { useGetDateAvailableTimeSlots } from "@/hooks/data/use-get-date-availabe-time-slots";
 import BookingSummary from "./booking-summary";
+import { createBookingCheckoutSession } from "@/actions/create-booking-checkout-session";
+import { loadStripe } from "@stripe/stripe-js";
 
 interface ServiceItemProps {
   service: BarbershopService;
@@ -34,7 +35,7 @@ const ServiceItem = ({ service, barbershop }: ServiceItemProps) => {
   );
   const [sheetIsOpen, setSheetIsOpen] = useState(false);
   const { executeAsync: executeCreateBooking, isPending: isCreatingBooking } =
-    useAction(createBooking);
+    useAction(createBookingCheckoutSession);
   const { data: availableTimeSlots } = useGetDateAvailableTimeSlots({
     barbershopId: barbershop.id,
     date: selectedDate,
@@ -70,7 +71,28 @@ const ServiceItem = ({ service, barbershop }: ServiceItemProps) => {
         "Erro ao criar agendamento. Por favor, tente novamente.",
       );
     }
-    toast.success("Agendamento criado com sucesso!");
+    const checkoutSession = result.data;
+    if (!checkoutSession) {
+      return toast.error(
+        "Erro ao criar agendamento. Por favor, tente novamente.",
+      );
+    }
+    if (!process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY) {
+      return toast.error(
+        "Erro ao criar agendamento. Por favor, tente novamente.",
+      );
+    }
+    const stripe = await loadStripe(
+      process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY,
+    );
+    if (!stripe) {
+      return toast.error(
+        "Erro ao criar agendamento. Por favor, tente novamente.",
+      );
+    }
+    await stripe.redirectToCheckout({
+      sessionId: checkoutSession.id,
+    });
     setSheetIsOpen(false);
     setSelectedDate(undefined);
     setSelectedTime(undefined);
