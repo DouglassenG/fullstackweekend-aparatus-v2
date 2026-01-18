@@ -49,3 +49,37 @@ fullstackweekend-aparatus-v2/
 │   └── utils/           # Funções auxiliares e helpers
 ├── package.json         # Dependências e Scripts
 └── README.md            # Documentação de Estudo
+```
+## 📦 Instalação e Configuração
+
+O projeto requer um ambiente Node.js para gerenciar as dependências e o servidor de desenvolvimento.
+
+### Pré-requisitos
+* **Node.js** e **NPM** instalados.
+* **Git** instalado.
+
+### Passo a Passo
+
+1.  **Clone o repositório:**
+    ```bash
+    git clone [https://github.com/DouglassenG/fullstackweekend-aparatus-v2.git](https://github.com/DouglassenG/fullstackweekend-aparatus-v2.git)
+    ```
+
+2.  **Acesse o diretório:**
+    ```bash
+    cd fullstackweekend-aparatus-v2
+    ```
+
+3.  **Instale as dependências:**
+    ```bash
+    npm install
+    # (Caso ocorra erro de conflito de versões, tente: npm install --legacy-peer-deps)
+    ```
+
+4.  **Execute o Servidor Local:**
+    Para iniciar a aplicação em modo de desenvolvimento (Hot Reload):
+    ```bash
+    npm run serve
+    # Ou, dependendo da configuração do projeto (Vite):
+    npm run dev
+    
